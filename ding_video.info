@@ -1,0 +1,7 @@
+name = Ding video
+description = Enable support of video materials uploading in "Title image" field.
+core = 7.x
+package = Ding!
+dependencies[] = media
+dependencies[] = media_youtube
+dependencies[] = media_vimeo

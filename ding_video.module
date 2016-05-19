@@ -1,0 +1,68 @@
+<?php
+/**
+ * @file
+ * ding_video.module
+ */
+
+/**
+ * Implements hook_field_widget_properties_alter().
+ */
+function ding_video_field_widget_properties_alter(&$widget, $context) {
+  if ($widget['module'] == 'media' && $context['entity_type'] == 'node') {
+    $widget['settings']['allowed_types']['video'] = 'video';
+  }
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function ding_video_node_view($node, $view_mode, $langcode) {
+  if ($view_mode == 'full') {
+    $media_field = field_view_field("node", $node, "field_{$node->type}_title_image");
+
+    if ($media_field['#items'][0]['type'] == 'video') {
+      $fid = $media_field['#items'][0]['fid'];
+
+      $display['settings'] = array(
+        'width' => '640',
+        'height' => '390',
+        'theme' => 'dark',
+        'color' => 'red',
+        'autohide' => '2',
+        'autoplay' => 0,
+        'loop' => 0,
+        'showinfo' => 1,
+        'modestbranding' => 0,
+        'rel' => 1,
+        'nocookie' => 0,
+        'protocol_specify' => 0,
+        'protocol' => 'https:',
+        'enablejsapi' => 0,
+        'origin' => '',
+      );
+
+      $file = file_load($fid);
+
+      if ($file->filemime == 'video/youtube') {
+        module_load_include('inc', 'media_youtube', '/includes/media_youtube.formatters.inc');
+        $image_render_array = media_youtube_file_formatter_video_view($file, $display, LANGUAGE_NONE);
+        $output = theme('media_youtube_video', $image_render_array);
+      }
+      else {
+        module_load_include('inc', 'media_vimeo', '/includes/media_vimeo.formatters.inc');
+
+        $display['settings']['api'] = 1;
+        $display['settings']['byline'] = 1;
+        $display['settings']['title'] = $file->filename;
+        $display['settings']['portrait'] = 1;
+
+        $image_render_array = media_vimeo_file_formatter_video_view($file, $display, LANGUAGE_NONE);
+        $output = theme('media_vimeo_video', $image_render_array);
+      }
+
+      $node->content["field_{$node->type}_title_image"] = array(
+        '#markup' => $output,
+      );
+    }
+  }
+}

@@ -3,7 +3,7 @@
 
   function setVideoClass() {
     var videoImage = $('.event-image > .media-youtube-video');
-    if($(videoImage).length > 0) {
+    if ($(videoImage).length > 0) {
       $(videoImage).parent().addClass('video-image-wrapper');
     }
   }

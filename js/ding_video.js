@@ -2,9 +2,10 @@
   'use strict';
 
   function setVideoClass() {
-    var videoImage = $('.event-image').find('iframe');
+    var videoWrapper = $('.event-image');
+    var videoImage = videoWrapper.find('iframe');
     if ($(videoImage).length > 0) {
-      $(videoImage).parent().addClass('video-image-wrapper');
+      $(videoWrapper).addClass('video-image-wrapper');
     }
   }
 

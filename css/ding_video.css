@@ -1,0 +1,21 @@
+/**
+ * Ding video styles
+ *
+ * @author ac
+ */
+
+.event .event-content .video-image-wrapper {
+  clear: both;
+  float: none;
+  max-width: 100%;
+  width: 100%;
+}
+
+.event .event-content .video-image-wrapper iframe {
+  width: 100%;
+}
+
+.node-type-ding-news .news .image-container .media-youtube-video iframe,
+.node-type-ding-page .page .page-content .media-youtube-video iframe {
+  width: 100%;
+}

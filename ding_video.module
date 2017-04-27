@@ -43,21 +43,26 @@ function ding_video_node_view($node, $view_mode, $langcode) {
 
       $file = file_load($fid);
 
-      if ($file->filemime == 'video/youtube') {
-        module_load_include('inc', 'media_youtube', '/includes/media_youtube.formatters.inc');
-        $image_render_array = media_youtube_file_formatter_video_view($file, $display, LANGUAGE_NONE);
-        $output = theme('media_youtube_video', $image_render_array);
+      if (!module_exists('oembed')) {
+        if ($file->filemime == 'video/youtube') {
+          module_load_include('inc', 'media_youtube', '/includes/media_youtube.formatters.inc');
+          $image_render_array = media_youtube_file_formatter_video_view($file, $display, LANGUAGE_NONE);
+          $output = theme('media_youtube_video', $image_render_array);
+        }
+        else {
+          module_load_include('inc', 'media_vimeo', '/includes/media_vimeo.formatters.inc');
+
+          $display['settings']['api'] = 1;
+          $display['settings']['byline'] = 1;
+          $display['settings']['title'] = $file->filename;
+          $display['settings']['portrait'] = 1;
+
+          $image_render_array = media_vimeo_file_formatter_video_view($file, $display, LANGUAGE_NONE);
+          $output = theme('media_vimeo_video', $image_render_array);
+        }
       }
       else {
-        module_load_include('inc', 'media_vimeo', '/includes/media_vimeo.formatters.inc');
-
-        $display['settings']['api'] = 1;
-        $display['settings']['byline'] = 1;
-        $display['settings']['title'] = $file->filename;
-        $display['settings']['portrait'] = 1;
-
-        $image_render_array = media_vimeo_file_formatter_video_view($file, $display, LANGUAGE_NONE);
-        $output = theme('media_vimeo_video', $image_render_array);
+        $output = theme('oembed__video', array('embed' => $file->oembed));
       }
 
       $node->content["field_{$node->type}_title_image"] = array(
@@ -65,4 +70,7 @@ function ding_video_node_view($node, $view_mode, $langcode) {
       );
     }
   }
+
+  drupal_add_js(drupal_get_path('module', 'ding_video') . '/js/ding_video.js', 'file');
+  drupal_add_css(drupal_get_path('module', 'ding_video') . '/css/ding_video.css');
 }

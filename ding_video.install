@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * @file
+ * Ding Video module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function ding_video_install() {
+  // Enable oEmbed youtube and vimeo providers.
+  $oembed_providers = variable_get('default_oembed_provider', []);
+  $oembed_providers['youtube'] = FALSE;
+  $oembed_providers['vimeo'] = FALSE;
+  variable_set('default_oembed_provider', $oembed_providers);
+}

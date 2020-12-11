@@ -6,3 +6,4 @@ version = 7.x-3.0.2
 dependencies[] = media
 dependencies[] = media_youtube
 dependencies[] = media_vimeo
+dependencies[] = oembed

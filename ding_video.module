@@ -18,12 +18,13 @@ function ding_video_field_widget_properties_alter(&$widget, $context) {
  */
 function ding_video_node_view($node, $view_mode, $langcode) {
   if ($view_mode == 'full') {
+    $output = [];
     $media_field = field_view_field("node", $node, "field_{$node->type}_title_image");
 
     if ($media_field['#items'][0]['type'] == 'video') {
       $fid = $media_field['#items'][0]['fid'];
 
-      $display['settings'] = array(
+      $display['settings'] = [
         'width' => '640',
         'height' => '390',
         'theme' => 'dark',
@@ -39,17 +40,19 @@ function ding_video_node_view($node, $view_mode, $langcode) {
         'protocol' => 'https:',
         'enablejsapi' => 0,
         'origin' => '',
-      );
+      ];
 
       $file = file_load($fid);
+      $scheme = file_uri_scheme($file->uri);
 
-      if (!module_exists('oembed')) {
-        if ($file->filemime == 'video/youtube') {
+      switch ($scheme) {
+        case 'youtube':
           module_load_include('inc', 'media_youtube', '/includes/media_youtube.formatters.inc');
           $image_render_array = media_youtube_file_formatter_video_view($file, $display, LANGUAGE_NONE);
           $output = theme('media_youtube_video', $image_render_array);
-        }
-        else {
+          break;
+
+        case 'vimeo':
           module_load_include('inc', 'media_vimeo', '/includes/media_vimeo.formatters.inc');
 
           $display['settings']['api'] = 1;
@@ -59,15 +62,18 @@ function ding_video_node_view($node, $view_mode, $langcode) {
 
           $image_render_array = media_vimeo_file_formatter_video_view($file, $display, LANGUAGE_NONE);
           $output = theme('media_vimeo_video', $image_render_array);
-        }
-      }
-      else {
-        $output = theme('oembed__video', array('embed' => $file->oembed));
+          break;
+
+        case 'public':
+          $vars = [];
+          $vars['files'] = $media_field['#items'];
+          $output = theme('file_entity_file_video', $vars);
+          break;
       }
 
-      $node->content["field_{$node->type}_title_image"] = array(
+      $node->content["field_{$node->type}_title_image"] = [
         '#markup' => $output,
-      );
+      ];
     }
   }
 

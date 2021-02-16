@@ -20,57 +20,121 @@ function ding_video_node_view($node, $view_mode, $langcode) {
   if ($view_mode == 'full') {
     $media_field = field_view_field("node", $node, "field_{$node->type}_title_image");
 
-    if ($media_field['#items'][0]['type'] == 'video') {
-      $fid = $media_field['#items'][0]['fid'];
+    foreach ($media_field['#items'] as $key => $item) {
+      if ($item['type'] == 'video') {
+        $fid = $item['fid'];
 
-      $display['settings'] = array(
-        'width' => '640',
-        'height' => '390',
-        'theme' => 'dark',
-        'color' => 'red',
-        'autohide' => '2',
-        'autoplay' => 0,
-        'loop' => 0,
-        'showinfo' => 1,
-        'modestbranding' => 0,
-        'rel' => 1,
-        'nocookie' => 0,
-        'protocol_specify' => 0,
-        'protocol' => 'https:',
-        'enablejsapi' => 0,
-        'origin' => '',
-      );
+        $display['settings'] = [
+          'width' => '640',
+          'height' => '390',
+          'autohide' => 2,
+          'autoplay' => 0,
+          'color' => 'red',
+          'enablejsapi' => 0,
+          'loop' => 0,
+          'modestbranding' => 0,
+          'nocookie' => 0,
+          'origin' => '',
+          'protocol' => 'https:',
+          'protocol_specify' => 0,
+          'rel' => 1,
+          'showinfo' => 1,
+          'theme' => 'dark',
+          'captions' => FALSE,
+          'controls' => FALSE,
+        ];
 
-      $file = file_load($fid);
+        $file = file_load($fid);
+        $scheme = file_uri_scheme($file->uri);
 
-      if (!module_exists('oembed')) {
-        if ($file->filemime == 'video/youtube') {
-          module_load_include('inc', 'media_youtube', '/includes/media_youtube.formatters.inc');
-          $image_render_array = media_youtube_file_formatter_video_view($file, $display, LANGUAGE_NONE);
-          $output = theme('media_youtube_video', $image_render_array);
-        }
-        else {
-          module_load_include('inc', 'media_vimeo', '/includes/media_vimeo.formatters.inc');
+        switch ($scheme) {
+          case 'youtube':
+            module_load_include('inc', 'media_youtube', '/includes/media_youtube.formatters.inc');
+            $render_array = media_youtube_file_formatter_video_view($file, $display, LANGUAGE_NONE);
+            $node->content["field_{$node->type}_title_image"][$key] = $render_array;
+            break;
 
-          $display['settings']['api'] = 1;
-          $display['settings']['byline'] = 1;
-          $display['settings']['title'] = $file->filename;
-          $display['settings']['portrait'] = 1;
+          case 'vimeo':
+            module_load_include('inc', 'media_vimeo', '/includes/media_vimeo.formatters.inc');
 
-          $image_render_array = media_vimeo_file_formatter_video_view($file, $display, LANGUAGE_NONE);
-          $output = theme('media_vimeo_video', $image_render_array);
+            $display['settings']['api'] = 1;
+            $display['settings']['byline'] = 1;
+            $display['settings']['title'] = $file->filename;
+            $display['settings']['portrait'] = 1;
+
+            $render_array = media_vimeo_file_formatter_video_view($file, $display, LANGUAGE_NONE);
+            $node->content["field_{$node->type}_title_image"][$key] = $render_array;
+            break;
+
+          case 'public':
+            $render_array = [
+              '#theme' => 'file_entity_file_video',
+              '#files' => [$item],
+              '#controls' => TRUE,
+              '#autoplay' => FALSE,
+              '#loop' => FALSE,
+              '#muted' => FALSE,
+              '#width' => NULL,
+              '#height' => NULL,
+              '#preload' => NULL,
+            ];
+
+            $node->content["field_{$node->type}_title_image"][$key] = $render_array;
+            break;
         }
       }
-      else {
-        $output = theme('oembed__video', array('embed' => $file->oembed));
-      }
-
-      $node->content["field_{$node->type}_title_image"] = array(
-        '#markup' => $output,
-      );
     }
   }
 
   drupal_add_js(drupal_get_path('module', 'ding_video') . '/js/ding_video.js', 'file');
   drupal_add_css(drupal_get_path('module', 'ding_video') . '/css/ding_video.css');
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function ding_video_preprocess_node(&$variables) {
+  $cts = [
+    'ding_news',
+    'ding_event'
+  ];
+
+  $node = $variables['node'];
+  if (!in_array($node->type, $cts)) {
+    return;
+  }
+
+  if ($variables['view_mode'] != 'teaser') {
+    return;
+  }
+
+  $field_name = "field_{$node->type}_list_image";
+  $list_image = $node->$field_name[LANGUAGE_NONE][0];
+
+  if ($list_image['type'] == 'video') {
+    switch ($list_image['filemime']) {
+      case 'video/youtube':
+        $media = new MediaYouTubeStreamWrapper();
+        $media->setUri($list_image['uri']);
+        $cover = $media->getLocalThumbnailPath();
+        break;
+
+      case 'video/vimeo':
+        $media = new MediaVimeoStreamWrapper();
+        $media->setUri($list_image['uri']);
+        $cover = $media->getLocalThumbnailPath();
+        break;
+
+      default:
+        $cover = NULL;
+        break;
+    }
+
+    if (!empty($cover)) {
+      $variables[$field_name][0]['uri'] = $cover;
+    }
+    else {
+      unset($variables[$field_name]);
+    }
+  }
 }

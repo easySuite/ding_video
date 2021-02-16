@@ -19,3 +19,12 @@
 .node-type-ding-page .page .page-content .media-youtube-video iframe {
   width: 100%;
 }
+
+.node-type-ding-news video,
+.node-type-ding-event video {
+  width: 100%;
+}
+
+.node-type-ding-event video {
+  margin-bottom: 20px;
+}

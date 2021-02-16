@@ -91,56 +91,50 @@ function ding_video_node_view($node, $view_mode, $langcode) {
 }
 
 /**
- * Implements hook_form_alter().
- *
- * Disabling manualcrop processing for attached video files.
+ * Implements hook_preprocess_HOOK().
  */
-function ding_video_form_alter(&$form, &$form_state, $form_id) {
-  if (isset($form['#node_edit_form']) && $form['#node_edit_form'] == TRUE) {
-    $content_types = [
-      'ding_news',
-      'ding_event',
-      'ding_eresource',
-      'ding_page',
-    ];
+function ding_video_preprocess_node(&$variables) {
+  $cts = [
+    'ding_news',
+    'ding_event'
+  ];
 
-    $node = isset($form['#node']) ? $form['#node'] : FALSE;
+  $node = $variables['node'];
+  if (!in_array($node->type, $cts)) {
+    return;
+  }
 
-    $image_field_types = ['list_image', 'title_image'];
-    if ($node && in_array($node->type, $content_types)) {
-      foreach ($image_field_types as $image_field_type) {
-        $field_name = "field_{$node->type}_{$image_field_type}";
+  if ($variables['view_mode'] != 'teaser') {
+    return;
+  }
 
-        if (isset($node->{$field_name})) {
-          // Existing node editing.
-          if (!empty($form_state['values'])) {
-            foreach ($form_state['values'][$field_name][LANGUAGE_NONE] as $key => $item) {
-              $file = file_load($item['fid']);
-              if ($file->type == 'video') {
-                unset($form[$field_name][LANGUAGE_NONE][$key]['#process'][2]);
-              }
-            }
-          }
-          else {
-            foreach ($node->{$field_name}[LANGUAGE_NONE] as $key => $item) {
-              if (!empty($item['type'])) {
-                if ($item['type'] == 'video') {
-                  unset($form[$field_name][LANGUAGE_NONE][$key]['#process'][2]);
-                }
-              }
-            }
-          }
-        }
-        elseif (isset($form_state['values'][$field_name])) {
-          // New node creation.
-          foreach ($form_state['values'][$field_name][LANGUAGE_NONE] as $key => $item) {
-            $file = file_load($item['fid']);
-            if ($file->type == 'video') {
-              unset($form[$field_name][LANGUAGE_NONE][$key]['#process'][2]);
-            }
-          }
-        }
-      }
+  $field_name = "field_{$node->type}_list_image";
+  $list_image = $node->$field_name[LANGUAGE_NONE][0];
+
+  if ($list_image['type'] == 'video') {
+    switch ($list_image['filemime']) {
+      case 'video/youtube':
+        $media = new MediaYouTubeStreamWrapper();
+        $media->setUri($list_image['uri']);
+        $cover = $media->getLocalThumbnailPath();
+        break;
+
+      case 'video/vimeo':
+        $media = new MediaVimeoStreamWrapper();
+        $media->setUri($list_image['uri']);
+        $cover = $media->getLocalThumbnailPath();
+        break;
+
+      default:
+        $cover = NULL;
+        break;
+    }
+
+    if (!empty($cover)) {
+      $variables[$field_name][0]['uri'] = $cover;
+    }
+    else {
+      unset($variables[$field_name]);
     }
   }
 }

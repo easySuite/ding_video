@@ -20,67 +20,69 @@ function ding_video_node_view($node, $view_mode, $langcode) {
   if ($view_mode == 'full') {
     $media_field = field_view_field("node", $node, "field_{$node->type}_title_image");
 
-    foreach ($media_field['#items'] as $key => $item) {
-      if ($item['type'] == 'video') {
-        $fid = $item['fid'];
+    if (!empty($media_field)) {
+      foreach ($media_field['#items'] as $key => $item) {
+        if ($item['type'] == 'video') {
+          $fid = $item['fid'];
 
-        $display['settings'] = [
-          'width' => '640',
-          'height' => '390',
-          'autohide' => 2,
-          'autoplay' => 0,
-          'color' => 'red',
-          'enablejsapi' => 0,
-          'loop' => 0,
-          'modestbranding' => 0,
-          'nocookie' => 0,
-          'origin' => '',
-          'protocol' => 'https:',
-          'protocol_specify' => 0,
-          'rel' => 1,
-          'showinfo' => 1,
-          'theme' => 'dark',
-          'captions' => FALSE,
-          'controls' => FALSE,
-        ];
+          $display['settings'] = [
+            'width' => '640',
+            'height' => '390',
+            'autohide' => 2,
+            'autoplay' => 0,
+            'color' => 'red',
+            'enablejsapi' => 0,
+            'loop' => 0,
+            'modestbranding' => 0,
+            'nocookie' => 0,
+            'origin' => '',
+            'protocol' => 'https:',
+            'protocol_specify' => 0,
+            'rel' => 1,
+            'showinfo' => 1,
+            'theme' => 'dark',
+            'captions' => FALSE,
+            'controls' => FALSE,
+          ];
 
-        $file = file_load($fid);
-        $scheme = file_uri_scheme($file->uri);
+          $file = file_load($fid);
+          $scheme = file_uri_scheme($file->uri);
 
-        switch ($scheme) {
-          case 'youtube':
-            module_load_include('inc', 'media_youtube', '/includes/media_youtube.formatters.inc');
-            $render_array = media_youtube_file_formatter_video_view($file, $display, LANGUAGE_NONE);
-            $node->content["field_{$node->type}_title_image"][$key] = $render_array;
-            break;
+          switch ($scheme) {
+            case 'youtube':
+              module_load_include('inc', 'media_youtube', '/includes/media_youtube.formatters.inc');
+              $render_array = media_youtube_file_formatter_video_view($file, $display, LANGUAGE_NONE);
+              $node->content["field_{$node->type}_title_image"][$key] = $render_array;
+              break;
 
-          case 'vimeo':
-            module_load_include('inc', 'media_vimeo', '/includes/media_vimeo.formatters.inc');
+            case 'vimeo':
+              module_load_include('inc', 'media_vimeo', '/includes/media_vimeo.formatters.inc');
 
-            $display['settings']['api'] = 1;
-            $display['settings']['byline'] = 1;
-            $display['settings']['title'] = $file->filename;
-            $display['settings']['portrait'] = 1;
+              $display['settings']['api'] = 1;
+              $display['settings']['byline'] = 1;
+              $display['settings']['title'] = $file->filename;
+              $display['settings']['portrait'] = 1;
 
-            $render_array = media_vimeo_file_formatter_video_view($file, $display, LANGUAGE_NONE);
-            $node->content["field_{$node->type}_title_image"][$key] = $render_array;
-            break;
+              $render_array = media_vimeo_file_formatter_video_view($file, $display, LANGUAGE_NONE);
+              $node->content["field_{$node->type}_title_image"][$key] = $render_array;
+              break;
 
-          case 'public':
-            $render_array = [
-              '#theme' => 'file_entity_file_video',
-              '#files' => [$item],
-              '#controls' => TRUE,
-              '#autoplay' => FALSE,
-              '#loop' => FALSE,
-              '#muted' => FALSE,
-              '#width' => NULL,
-              '#height' => NULL,
-              '#preload' => NULL,
-            ];
+            case 'public':
+              $render_array = [
+                '#theme' => 'file_entity_file_video',
+                '#files' => [$item],
+                '#controls' => TRUE,
+                '#autoplay' => FALSE,
+                '#loop' => FALSE,
+                '#muted' => FALSE,
+                '#width' => NULL,
+                '#height' => NULL,
+                '#preload' => NULL,
+              ];
 
-            $node->content["field_{$node->type}_title_image"][$key] = $render_array;
-            break;
+              $node->content["field_{$node->type}_title_image"][$key] = $render_array;
+              break;
+          }
         }
       }
     }

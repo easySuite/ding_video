@@ -20,7 +20,7 @@ function ding_video_node_view($node, $view_mode, $langcode) {
   if ($view_mode == 'full') {
     $media_field = field_view_field("node", $node, "field_{$node->type}_title_image");
 
-    foreach ($media_field['#items'] as $key => $item) {
+    foreach ($media_field['#items'] ?? [] as $key => $item) {
       if ($item['type'] == 'video') {
         $fid = $item['fid'];
 
